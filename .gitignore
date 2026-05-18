@@ -1,0 +1,16 @@
+.Rproj.user
+.Rhistory
+.Rdata
+.httr-oauth
+*.Rproj
+renv/library
+renv/local
+renv/cellar
+renv/python
+renv/staging
+/doc/
+/Meta/
+
+.claude/
+tasks/
+ideas/

@@ -1,0 +1,99 @@
+---
+title: "JSON-LD Context and Serialization Format"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{JSON-LD Context and Serialization Format}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(collapse = TRUE, comment = "#>")
+```
+
+## Overview
+
+`exportOmopDag()` serializes an `OmopDag` to a JSON-LD lockfile that is both
+human-readable and machine-processable. The canonical `@context` is bundled in
+`inst/jsonld/context-v1.json` and uses the namespace prefix
+`https://omopcausalgraph.org/vocab/v1#`.
+
+## @context mapping
+
+| Term | IRI |
+|------|-----|
+| `construct` | `omocg:construct` |
+| `causal` | `omocg:causal` |
+| `binding` | `omocg:binding` |
+| `exposure` | `omocg:exposure` |
+| `outcome` | `omocg:outcome` |
+| `adjusted` | `omocg:adjusted` |
+| `selected` | `omocg:selected` |
+| `unobserved` | `omocg:unobserved` |
+| `conceptId` | Athena IRI `https://athena.ohdsi.org/search-terms/terms/{id}` |
+
+## Athena IRI scheme
+
+Every construct node's `@id` in the lockfile is constructed as:
+
+```
+https://athena.ohdsi.org/search-terms/terms/{conceptId}
+```
+
+This is a stable, publicly resolvable URL for the concept in the Athena
+OHDSI vocabulary browser. It enables future knowledge graph integration where
+expert DAGs can be merged and reasoned over by matching concept IRIs.
+
+## SHA-256 binding hash
+
+For every embedded phenotype definition (`atlasJson`, `capr`-compiled, or
+resolved `PhenotypeLibrary`), the lockfile records a SHA-256 hash of the
+definition JSON string. This allows downstream consumers to verify integrity
+without re-fetching.
+
+```json
+{
+  "alias": "default",
+  "type": "atlasJson",
+  "active": true,
+  "json": "{ ... }",
+  "sha256": "e3b0c44298fc1c149afb..."
+}
+```
+
+## PhenotypeLibrary reference mode
+
+When a binding is stored in reference mode (not yet resolved), only a compact
+reference is serialized:
+
+```json
+{
+  "alias": "pl_ref",
+  "type": "PhenotypeLibrary",
+  "active": false,
+  "phenotypeId": 1,
+  "commitHash": "abc123...",
+  "repo": "OHDSI/PhenotypeLibrary",
+  "resolved": false
+}
+```
+
+Run `resolvePhenotypes()` to fetch and embed the JSON at the recorded commit.
+
+## Forward-compatibility contract
+
+The `version` field in the lockfile records the `OmopCausalGraph` package
+version at export time. `importOmopDag()` enforces:
+
+- **Major version mismatch**: hard error. Manual migration is required (not
+  yet automated; deferred post-1.0).
+- **Minor/patch version mismatch**: warning only; import proceeds.
+
+This contract ensures lockfiles remain interpretable as the package evolves
+through the 0.x series, with a clear breaking-change signal at 1.0.
+
+## Future: OmopCausalGraphHub
+
+The JSON-LD format is designed for a future knowledge graph
+(`OmopCausalGraphHub`) where expert DAGs can be merged and reasoned over using
+shared Athena concept IRIs. No Hub integration code is built in version 0.1.0.

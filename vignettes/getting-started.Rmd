@@ -1,0 +1,146 @@
+---
+title: "Getting Started with OmopCausalGraph"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Getting Started with OmopCausalGraph}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment  = "#>"
+)
+```
+
+```{r setup}
+library(OmopCausalGraph)
+```
+
+## Overview
+
+`OmopCausalGraph` lets you express a pharmacoepidemiology study as a causal DAG
+where every node is anchored to an OMOP Standard Concept ID and can carry
+one or more executable phenotype bindings.
+
+## 1 — Build a DAG
+
+```{r build-dag}
+dag <- emptyOmopDag(
+  name        = "NSAID GI Bleed Study",
+  version     = "0.1.0",
+  description = "Effect of NSAIDs on upper GI bleed risk",
+  author      = "Smith J"
+)
+
+dag <- addNode(dag, "Age",       conceptId = 4216316L, domain = "Observation")
+dag <- addNode(dag, "Celecoxib", conceptId = 1118084L, domain = "Drug")
+dag <- addNode(dag, "GI_Bleed",  conceptId = 192671L,  domain = "Condition")
+dag <- addNode(dag, "Selected",  conceptId = 4188539L, domain = "Observation")
+
+dag <- addCausal(dag, "Age",       c("Celecoxib", "GI_Bleed"))
+dag <- addCausal(dag, "Celecoxib", "GI_Bleed")
+dag <- addCausal(dag, "Celecoxib", "Selected")
+dag <- addCausal(dag, "GI_Bleed",  "Selected")
+
+dag
+```
+
+## 2 — Assign causal roles
+
+```{r set-roles}
+dag <- setExposure(dag, "Celecoxib")
+dag <- setOutcome(dag,  "GI_Bleed")
+dag <- setSelected(dag, "Selected")
+```
+
+## 3 — Compute and record adjustment sets
+
+```{r adjustment-sets}
+sets <- getMinimalAdjustmentSet(dag)
+print(sets)
+
+dag <- setAdjustmentSet(dag, "Celecoxib", "GI_Bleed", index = 1L)
+```
+
+## 4 — Check selection bias
+
+```{r selection-bias}
+sb <- checkSelectionBias(dag)
+print(sb)
+```
+
+## 5 — Validate the DAG
+
+```{r validate}
+v <- validateDag(dag)
+v$overall
+lapply(v$checks, function(c) c$message)
+```
+
+## 6 — Bind phenotypes
+
+```{r bind-phenotypes}
+# Embedded ATLAS JSON
+atlas_json <- '{"ConceptSets":[],"PrimaryCriteria":{"CriteriaList":[]}}'
+dag <- bindPhenotype(dag, "Celecoxib", type = "atlasJson", definition = atlas_json)
+dag <- bindPhenotype(dag, "GI_Bleed",  type = "atlasJson", definition = atlas_json)
+
+# Demographic metadata (no cohort generated)
+dag <- bindPhenotype(dag, "Age", type = "demographics", definition = "year_of_birth")
+
+# PhenotypeLibrary reference (resolved before entering a locked environment)
+commit <- paste(rep("a", 40), collapse = "")
+dag <- bindPhenotype(dag, "Celecoxib",
+  type       = "PhenotypeLibrary",
+  definition = list(phenotypeId = 1L, commitHash = commit),
+  alias      = "pl_ref"
+)
+
+# Switch active binding
+dag <- setActiveBinding(dag, "Celecoxib", alias = "default")
+```
+
+## 7 — Resolve PhenotypeLibrary bindings
+
+```{r resolve, eval = FALSE}
+# Run on an internet-connected machine before entering a locked hospital environment
+dag <- resolvePhenotypes(dag)
+```
+
+## 8 — Visualise
+
+```{r plot-dag}
+p <- plotDag(dag)
+print(p)
+```
+
+## 9 — Execute cohorts
+
+```{r execute, eval = FALSE}
+cd <- DatabaseConnector::createConnectionDetails(
+  dbms     = "postgresql",
+  server   = "my-cdm-server/cdm_v54",
+  user     = "analyst",
+  password = rstudioapi::askForPassword()
+)
+
+result <- executeDagPhenotypes(
+  dag,
+  connectionDetails = cd,
+  cdmSchema         = "cdm_v54",
+  resultsSchema     = "results",
+  cohortTable       = "cohort"
+)
+print(result)
+```
+
+## 10 — Export and re-import
+
+```{r roundtrip, eval = FALSE}
+exportOmopDag(dag, "nsaid_gi_bleed_v1.json")
+
+dag2 <- importOmopDag("nsaid_gi_bleed_v1.json")
+dag2
+```

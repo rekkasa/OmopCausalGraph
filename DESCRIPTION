@@ -1,0 +1,38 @@
+Package: OmopCausalGraph
+Type: Package
+Title: Causal DAGs Anchored to OMOP Standard Concepts
+Version: 0.1.0
+Authors@R: person("First", "Last", email = "p12kast@gmail.com", role = c("aut", "cre"))
+Description: Bridges causal directed acyclic graphs (DAGs) with OMOP Common Data
+    Model (CDM) concept identifiers and executable phenotype definitions. The
+    central abstraction is an OmopDag R6 class that holds a dagitty graph, a
+    construct dictionary anchored to OMOP Standard Concept IDs, a phenotype
+    binding registry, and study metadata in a single mutable object. The
+    pipe-friendly API lets analysts incrementally build a study DAG, bind
+    executable phenotypes to nodes, compute minimal adjustment sets, and generate
+    only the required cohorts in a target OMOP CDM.
+License: Apache License (>= 2)
+Encoding: UTF-8
+LazyData: true
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 7.3.2
+Config/testthat/edition: 3
+VignetteBuilder: knitr
+Imports:
+    R6,
+    dagitty,
+    ggdag,
+    ggplot2,
+    jsonlite,
+    openssl
+Suggests:
+    Capr,
+    CohortGenerator,
+    DatabaseConnector,
+    PhenotypeLibrary,
+    Eunomia,
+    testthat (>= 3.0.0),
+    knitr,
+    rmarkdown,
+    withr,
+    mockery

@@ -1,0 +1,10 @@
+^tasks$
+^ideas$
+^\.claude$
+^data-raw$
+^renv$
+^renv\.lock$
+^\.Rprofile$
+^README\.Rmd$
+^LICENSE\.md$
+^\.github$

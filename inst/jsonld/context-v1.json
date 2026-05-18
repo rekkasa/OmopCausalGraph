@@ -1,0 +1,40 @@
+{
+  "@context": {
+    "@version": 1.1,
+    "omocg": "https://omopcausalgraph.org/vocab/v1#",
+    "athena": "https://athena.ohdsi.org/search-terms/terms/",
+    "construct": "omocg:construct",
+    "causal": "omocg:causal",
+    "binding": "omocg:binding",
+    "exposure": "omocg:exposure",
+    "outcome": "omocg:outcome",
+    "adjusted": "omocg:adjusted",
+    "selected": "omocg:selected",
+    "unobserved": "omocg:unobserved",
+    "conceptId": {
+      "@id": "omocg:conceptId",
+      "@type": "@id",
+      "@prefix": "athena:"
+    },
+    "name": "omocg:name",
+    "domain": "omocg:domain",
+    "cause": "omocg:cause",
+    "effect": "omocg:effect",
+    "evidence": "omocg:evidence",
+    "phenotypeId": "omocg:phenotypeId",
+    "commitHash": "omocg:commitHash",
+    "sha256": "omocg:sha256",
+    "json": "omocg:json",
+    "version": "omocg:version",
+    "created": {
+      "@id": "omocg:created",
+      "@type": "xsd:dateTime"
+    },
+    "author": "omocg:author",
+    "orcid": {
+      "@id": "omocg:orcid",
+      "@type": "@id"
+    },
+    "xsd": "http://www.w3.org/2001/XMLSchema#"
+  }
+}
