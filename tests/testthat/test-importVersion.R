@@ -1,4 +1,4 @@
-test_that("importOmopDag hard-errors on major version mismatch", {
+test_that("importOmopCausalGraph hard-errors on major version mismatch", {
   path <- withr::local_tempfile(fileext = ".json")
   doc  <- list(
     `@context` = "https://omopcausalgraph.org/context/v1",
@@ -8,10 +8,10 @@ test_that("importOmopDag hard-errors on major version mismatch", {
     bindings   = list(), adjustmentSets = list()
   )
   jsonlite::write_json(doc, path, auto_unbox = TRUE)
-  expect_error(importOmopDag(path), "Major version mismatch")
+  expect_error(importOmopCausalGraph(path), "Major version mismatch")
 })
 
-test_that("importOmopDag warns on patch version mismatch and proceeds", {
+test_that("importOmopCausalGraph warns on patch version mismatch and proceeds", {
   path <- withr::local_tempfile(fileext = ".json")
   doc  <- list(
     `@context` = "https://omopcausalgraph.org/context/v1",
@@ -21,5 +21,5 @@ test_that("importOmopDag warns on patch version mismatch and proceeds", {
     bindings   = list(), adjustmentSets = list()
   )
   jsonlite::write_json(doc, path, auto_unbox = TRUE)
-  expect_warning(importOmopDag(path), "Version mismatch")
+  expect_warning(importOmopCausalGraph(path), "Version mismatch")
 })

@@ -1,5 +1,5 @@
 test_that("export/import round-trip preserves structure and SHA-256", {
-  dag <- make_test_dag()
+  dag <- makeTestOmopCausalGraph()
   json <- '{"ConceptSets":[],"PrimaryCriteria":{"CriteriaList":[]}}'
   dag <- bindPhenotype(dag, "Exposure",   type = "atlasJson", definition = json)
   dag <- bindPhenotype(dag, "Outcome",    type = "atlasJson", definition = json)
@@ -7,8 +7,8 @@ test_that("export/import round-trip preserves structure and SHA-256", {
   dag <- setAdjustmentSet(dag, "Exposure", "Outcome", index = 1L)
 
   path <- withr::local_tempfile(fileext = ".json")
-  exportOmopDag(dag, path)
-  dag2 <- importOmopDag(path)
+  exportOmopCausalGraph(dag, path)
+  dag2 <- importOmopCausalGraph(path)
 
   # constructs
   expect_equal(
@@ -35,7 +35,7 @@ test_that("export/import round-trip preserves structure and SHA-256", {
 
   # adjustment sets
   expect_equal(
-    dag$adjustment_sets()$Exposure__Outcome$nodes,
-    dag2$adjustment_sets()$Exposure__Outcome$nodes
+    dag$adjustmentSets()$Exposure__Outcome$nodes,
+    dag2$adjustmentSets()$Exposure__Outcome$nodes
   )
 })

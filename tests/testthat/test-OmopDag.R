@@ -1,27 +1,27 @@
 test_that("constructor sets metadata fields", {
-  dag <- emptyOmopDag("MyStudy", version = "1.0.0", author = "Smith")
-  expect_equal(dag$name, "MyStudy")
-  expect_equal(dag$metadata()$version, "1.0.0")
-  expect_equal(dag$metadata()$author,  "Smith")
+  omopCausalGraph <- emptyOmopCausalGraph("MyStudy", version = "1.0.0", author = "Smith")
+  expect_equal(omopCausalGraph$name, "MyStudy")
+  expect_equal(omopCausalGraph$metadata()$version, "1.0.0")
+  expect_equal(omopCausalGraph$metadata()$author,  "Smith")
 })
 
 test_that("name mirrors metadata name", {
-  dag <- emptyOmopDag("Mirror")
-  expect_equal(dag$name, dag$metadata()$name)
+  omopCausalGraph <- emptyOmopCausalGraph("Mirror")
+  expect_equal(omopCausalGraph$name, omopCausalGraph$metadata()$name)
 })
 
 test_that("print() does not error", {
-  dag <- make_test_dag()
-  expect_no_error(print(dag))
+  omopCausalGraph <- makeTestOmopCausalGraph()
+  expect_no_error(print(omopCausalGraph))
 })
 
 test_that("empty DAG has zero nodes and edges", {
-  dag <- emptyOmopDag("Empty")
-  expect_equal(nrow(dag$constructs()), 0L)
-  expect_equal(nrow(dag$edges()),      0L)
+  omopCausalGraph <- emptyOmopCausalGraph("Empty")
+  expect_equal(nrow(omopCausalGraph$constructs()), 0L)
+  expect_equal(nrow(omopCausalGraph$edges()),      0L)
 })
 
 test_that("constructor errors on missing name", {
-  expect_error(emptyOmopDag(""),         "non-empty")
-  expect_error(emptyOmopDag(character(0)), "non-empty")
+  expect_error(emptyOmopCausalGraph(""),         "non-empty")
+  expect_error(emptyOmopCausalGraph(character(0)), "non-empty")
 })

@@ -3,7 +3,7 @@ skip_if_not_installed("CohortGenerator")
 skip_if_not_installed("DatabaseConnector")
 skip_on_cran()
 
-test_that("executeDagPhenotypes returns summary with row counts", {
+test_that("executeOmopCausalGraphPhenotypes returns summary with row counts", {
   cd <- Eunomia::getEunomiaConnectionDetails()
 
   # Celecoxib (1118084) -> GI bleed (192671) with age confounder
@@ -43,21 +43,21 @@ test_that("executeDagPhenotypes returns summary with row counts", {
     "CensorWindow": {}, "cdmVersionRange": ">=5.0.0"
   }'
 
-  dag <- emptyOmopDag("EunomiaTest")
-  dag <- addNode(dag, "Confounder", 4216316L, "Condition")
-  dag <- addNode(dag, "Exposure",   1118084L,  "Drug")
-  dag <- addNode(dag, "Outcome",    192671L,   "Condition")
-  dag <- addCausal(dag, "Confounder", c("Exposure", "Outcome"))
-  dag <- addCausal(dag, "Exposure",  "Outcome")
-  dag <- setExposure(dag, "Exposure")
-  dag <- setOutcome(dag,  "Outcome")
-  dag <- bindPhenotype(dag, "Exposure",   type = "atlasJson", definition = celecoxib_json)
-  dag <- bindPhenotype(dag, "Outcome",    type = "atlasJson", definition = gi_bleed_json)
-  dag <- bindPhenotype(dag, "Confounder", type = "atlasJson", definition = diclofenac_json)
-  dag <- setAdjustmentSet(dag, "Exposure", "Outcome", index = 1L)
+  omopCausalGraph <- emptyOmopCausalGraph("EunomiaTest")
+  omopCausalGraph <- addNode(omopCausalGraph, "Confounder", 4216316L, "Condition")
+  omopCausalGraph <- addNode(omopCausalGraph, "Exposure",   1118084L,  "Drug")
+  omopCausalGraph <- addNode(omopCausalGraph, "Outcome",    192671L,   "Condition")
+  omopCausalGraph <- addCausal(omopCausalGraph, "Confounder", c("Exposure", "Outcome"))
+  omopCausalGraph <- addCausal(omopCausalGraph, "Exposure",  "Outcome")
+  omopCausalGraph <- setExposure(omopCausalGraph, "Exposure")
+  omopCausalGraph <- setOutcome(omopCausalGraph,  "Outcome")
+  omopCausalGraph <- bindPhenotype(omopCausalGraph, "Exposure",   type = "atlasJson", definition = celecoxib_json)
+  omopCausalGraph <- bindPhenotype(omopCausalGraph, "Outcome",    type = "atlasJson", definition = gi_bleed_json)
+  omopCausalGraph <- bindPhenotype(omopCausalGraph, "Confounder", type = "atlasJson", definition = diclofenac_json)
+  omopCausalGraph <- setAdjustmentSet(omopCausalGraph, "Exposure", "Outcome", index = 1L)
 
-  result <- executeDagPhenotypes(
-    dag,
+  result <- executeOmopCausalGraphPhenotypes(
+    omopCausalGraph,
     connectionDetails = cd,
     cdmSchema         = "main",
     resultsSchema     = "main",
@@ -70,45 +70,45 @@ test_that("executeDagPhenotypes returns summary with row counts", {
   expect_true(all(!is.na(result$row_count)))
 })
 
-test_that("executeDagPhenotypes hard-errors on unresolved PhenotypeLibrary binding", {
-  dag <- make_test_dag()
-  dag <- bindPhenotype(dag, "Exposure", type = "PhenotypeLibrary",
+test_that("executeOmopCausalGraphPhenotypes hard-errors on unresolved PhenotypeLibrary binding", {
+  omopCausalGraph <- make_test_omopCausalGraph()
+  omopCausalGraph <- bindPhenotype(omopCausalGraph, "Exposure", type = "PhenotypeLibrary",
                         definition = list(phenotypeId = 1L,
                                          commitHash = paste(rep("a", 40), collapse = "")))
-  dag <- bindPhenotype(dag, "Outcome",    type = "atlasJson", definition = '{"x":1}')
-  dag <- bindPhenotype(dag, "Confounder", type = "atlasJson", definition = '{"x":1}')
-  dag <- setAdjustmentSet(dag, "Exposure", "Outcome", index = 1L)
+  omopCausalGraph <- bindPhenotype(omopCausalGraph, "Outcome",    type = "atlasJson", definition = '{"x":1}')
+  omopCausalGraph <- bindPhenotype(omopCausalGraph, "Confounder", type = "atlasJson", definition = '{"x":1}')
+  omopCausalGraph <- setAdjustmentSet(omopCausalGraph, "Exposure", "Outcome", index = 1L)
 
   cd <- Eunomia::getEunomiaConnectionDetails()
   expect_error(
-    executeDagPhenotypes(dag, cd, "main", "main", "cohort"),
+    executeOmopCausalGraphPhenotypes(omopCausalGraph, cd, "main", "main", "cohort"),
     "Unresolved bindings"
   )
 })
 
-test_that("executeDagPhenotypes hard-errors on unidentifiable DAG", {
+test_that("executeOmopCausalGraphPhenotypes hard-errors on unidentifiable DAG", {
   cd  <- Eunomia::getEunomiaConnectionDetails()
-  dag <- emptyOmopDag("UnidentTest")
-  dag <- addNode(dag, "U",        99L)
-  dag <- addNode(dag, "Exposure", 1L, "Drug")
-  dag <- addNode(dag, "Outcome",  2L, "Condition")
-  dag <- addCausal(dag, "U", "Exposure")
-  dag <- addCausal(dag, "U", "Outcome")
-  dag <- addCausal(dag, "Exposure", "Outcome")
-  dag <- setExposure(dag,   "Exposure")
-  dag <- setOutcome(dag,    "Outcome")
-  dag <- setUnobserved(dag, "U")
-  dag <- bindPhenotype(dag, "Exposure", type = "atlasJson", definition = '{"x":1}')
-  dag <- bindPhenotype(dag, "Outcome",  type = "atlasJson", definition = '{"x":1}')
-  dag <- setAdjustmentSet(dag, "Exposure", "Outcome", index = 0L)
+  omopCausalGraph <- emptyOmopCausalGraph("UnidentTest")
+  omopCausalGraph <- addNode(omopCausalGraph, "U", 99L)
+  omopCausalGraph <- addNode(omopCausalGraph, "Exposure", 1L, "Drug")
+  omopCausalGraph <- addNode(omopCausalGraph, "Outcome",  2L, "Condition")
+  omopCausalGraph <- addCausal(omopCausalGraph, "U", "Exposure")
+  omopCausalGraph <- addCausal(omopCausalGraph, "U", "Outcome")
+  omopCausalGraph <- addCausal(omopCausalGraph, "Exposure", "Outcome")
+  omopCausalGraph <- setExposure(omopCausalGraph,   "Exposure")
+  omopCausalGraph <- setOutcome(omopCausalGraph,    "Outcome")
+  omopCausalGraph <- setUnobserved(omopCausalGraph, "U")
+  omopCausalGraph <- bindPhenotype(omopCausalGraph, "Exposure", type = "atlasJson", definition = '{"x":1}')
+  omopCausalGraph <- bindPhenotype(omopCausalGraph, "Outcome",  type = "atlasJson", definition = '{"x":1}')
+  omopCausalGraph <- setAdjustmentSet(omopCausalGraph, "Exposure", "Outcome", index = 0L)
 
   expect_error(
-    executeDagPhenotypes(dag, cd, "main", "main", "cohort"),
+    executeOmopCausalGraphPhenotypes(dag, cd, "main", "main", "cohort"),
     "unidentifiable|adjustment set"
   )
 
   expect_warning(
-    executeDagPhenotypes(dag, cd, "main", "main", "cohort", allowIncomplete = TRUE),
+    executeOmopCausalGraphPhenotypes(dag, cd, "main", "main", "cohort", allowIncomplete = TRUE),
     "unidentifiable|bias"
   )
 })

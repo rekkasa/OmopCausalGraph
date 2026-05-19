@@ -1,5 +1,5 @@
 test_that("setActiveBinding switches the active alias", {
-  dag  <- emptyOmopDag("Test")
+  dag  <- emptyOmopCausalGraph("Test")
   dag  <- addNode(dag, "E", 1L)
   json <- '{"ConceptSets":[]}'
   dag  <- bindPhenotype(dag, "E", type = "atlasJson", definition = json)
@@ -9,14 +9,14 @@ test_that("setActiveBinding switches the active alias", {
 })
 
 test_that("setActiveBinding errors on unknown alias", {
-  dag  <- emptyOmopDag("Test")
+  dag  <- emptyOmopCausalGraph("Test")
   dag  <- addNode(dag, "E", 1L)
   dag  <- bindPhenotype(dag, "E", type = "atlasJson", definition = '{"ConceptSets":[]}')
   expect_error(setActiveBinding(dag, "E", "ghost"), "not found")
 })
 
 test_that("setActiveBinding errors on node with no bindings", {
-  dag <- emptyOmopDag("Test")
+  dag <- emptyOmopCausalGraph("Test")
   dag <- addNode(dag, "E", 1L)
   expect_error(setActiveBinding(dag, "E", "default"), "no bindings")
 })

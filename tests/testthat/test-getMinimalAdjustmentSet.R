@@ -1,5 +1,5 @@
 test_that("getMinimalAdjustmentSet returns Confounder for fixture", {
-  dag  <- make_test_dag()
+  dag  <- makeTestOmopCausalGraph()
   sets <- getMinimalAdjustmentSet(dag)
   key  <- "Exposure__Outcome"
   expect_true(key %in% names(sets))
@@ -10,13 +10,13 @@ test_that("getMinimalAdjustmentSet returns Confounder for fixture", {
 })
 
 test_that("getMinimalAdjustmentSet print() does not error", {
-  dag  <- make_test_dag()
+  dag  <- makeTestOmopCausalGraph()
   sets <- getMinimalAdjustmentSet(dag)
   expect_no_error(print(sets))
 })
 
 test_that("getMinimalAdjustmentSet returns empty list when no exposure/outcome", {
-  dag  <- emptyOmopDag("Test")
+  dag  <- emptyOmopCausalGraph("Test")
   sets <- getMinimalAdjustmentSet(dag)
   expect_equal(length(sets), 0L)
 })

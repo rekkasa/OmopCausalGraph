@@ -1,7 +1,7 @@
 test_that("resolvePhenotypes marks binding as resolved on successful fetch", {
   skip_if_not_installed("mockery")
 
-  dag <- emptyOmopDag("Test")
+  dag <- emptyOmopCausalGraph("Test")
   dag <- addNode(dag, "E", 1L)
   dag <- bindPhenotype(dag, "E", type = "PhenotypeLibrary",
                         definition = list(phenotypeId = 1L,
@@ -28,7 +28,7 @@ test_that("resolvePhenotypes marks binding as resolved on successful fetch", {
 })
 
 test_that("resolvePhenotypes skips already-resolved bindings", {
-  dag <- emptyOmopDag("Test")
+  dag <- emptyOmopCausalGraph("Test")
   dag <- addNode(dag, "E", 1L)
   pre_resolved <- list(
     type        = "PhenotypeLibrary",
@@ -39,14 +39,14 @@ test_that("resolvePhenotypes skips already-resolved bindings", {
     json        = '{"ConceptSets":[]}',
     sha256      = "abc123"
   )
-  dag$bind_phenotype_impl("E", "default", pre_resolved)
+  dag$bindPhenotypeImpl("E", "default", pre_resolved)
   expect_no_error(resolvePhenotypes(dag))
 })
 
 test_that("resolvePhenotypes aggregates errors on partial failure", {
   skip_if_not_installed("mockery")
 
-  dag <- emptyOmopDag("Test")
+  dag <- emptyOmopCausalGraph("Test")
   dag <- addNode(dag, "E1", 1L)
   dag <- addNode(dag, "E2", 2L)
   for (n in c("E1", "E2")) {
