@@ -27,7 +27,7 @@ one or more executable phenotype bindings.
 ## 1 — Build a DAG
 
 ```{r build-dag}
-dag <- emptyOmopDag(
+dag <- emptyOmopCausalGraph(
   name        = "NSAID GI Bleed Study",
   version     = "0.1.0",
   description = "Effect of NSAIDs on upper GI bleed risk",
@@ -52,7 +52,6 @@ dag
 ```{r set-roles}
 dag <- setExposure(dag, "Celecoxib")
 dag <- setOutcome(dag,  "GI_Bleed")
-dag <- setSelected(dag, "Selected")
 ```
 
 ## 3 — Compute and record adjustment sets

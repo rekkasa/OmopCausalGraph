@@ -12,10 +12,10 @@
 
 `OmopCausalGraph` bridges causal directed acyclic graphs (DAGs) with
 OMOP Common Data Model (CDM) concept identifiers and executable
-phenotype definitions. The central abstraction is an `OmopDag` R6 class
-that holds a `dagitty` graph, a construct dictionary anchored to OMOP
-Standard Concept IDs, a phenotype binding registry, and study metadata
-in a single mutable object.
+phenotype definitions. The central abstraction is an `OmopCausalGraph`
+R6 class that holds a `dagitty` graph, a construct dictionary anchored
+to OMOP Standard Concept IDs, a phenotype binding registry, and study
+metadata in a single mutable object.
 
 ## Installation
 
@@ -33,7 +33,7 @@ pak::pak("OHDSI/OmopCausalGraph")
 library(OmopCausalGraph)
 
 # 1. Create the DAG
-dag <- emptyOmopDag("NSAID GI Bleed Study", author = "Smith J")
+dag <- emptyOmopCausalGraph("NSAID GI Bleed Study", author = "Smith J")
 
 dag <- addNode(dag, "Age",        conceptId = 4216316L, domain = "Observation")
 dag <- addNode(dag, "Celecoxib",  conceptId = 1118084L, domain = "Drug")
@@ -52,9 +52,9 @@ print(sets)
 dag <- setAdjustmentSet(dag, "Celecoxib", "GI_Bleed", index = 1L)
 
 # 4. Bind phenotype definitions
-atlas_json <- readLines("inst/atlas/celecoxib.json", warn = FALSE) |> paste(collapse = "\n")
-dag <- bindPhenotype(dag, "Celecoxib", type = "atlasJson", definition = atlas_json)
-dag <- bindPhenotype(dag, "GI_Bleed",  type = "atlasJson", definition = atlas_json)
+atlasJson <- readLines("inst/atlas/celecoxib.json", warn = FALSE) |> paste(collapse = "\n")
+dag <- bindPhenotype(dag, "Celecoxib", type = "atlasJson", definition = atlasJson)
+dag <- bindPhenotype(dag, "GI_Bleed",  type = "atlasJson", definition = atlasJson)
 dag <- bindPhenotype(dag, "Age",       type = "demographics", definition = "year_of_birth")
 
 # PhenotypeLibrary reference (fetch later with resolvePhenotypes())
@@ -69,10 +69,10 @@ p <- plotDag(dag)
 print(p)
 
 # 6. Export as JSON-LD lockfile
-exportOmopDag(dag, "nsaid_gi_bleed_v1.json")
+exportOmopCausalGraph(dag, "nsaid_gi_bleed_v1.json")
 
 # 7. Re-import in another session
-dag2 <- importOmopDag("nsaid_gi_bleed_v1.json")
+dag2 <- importOmopCausalGraph("nsaid_gi_bleed_v1.json")
 ```
 
 ## Execute cohorts in an OMOP CDM

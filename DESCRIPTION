@@ -5,7 +5,7 @@ Version: 0.1.0
 Authors@R: person("First", "Last", email = "p12kast@gmail.com", role = c("aut", "cre"))
 Description: Bridges causal directed acyclic graphs (DAGs) with OMOP Common Data
     Model (CDM) concept identifiers and executable phenotype definitions. The
-    central abstraction is an OmopDag R6 class that holds a dagitty graph, a
+    central abstraction is an OmopOmopCausalGraph R6 class that holds a dagitty graph, a
     construct dictionary anchored to OMOP Standard Concept IDs, a phenotype
     binding registry, and study metadata in a single mutable object. The
     pipe-friendly API lets analysts incrementally build a study DAG, bind
@@ -15,7 +15,6 @@ License: Apache License (>= 2)
 Encoding: UTF-8
 LazyData: true
 Roxygen: list(markdown = TRUE)
-RoxygenNote: 7.3.2
 Config/testthat/edition: 3
 VignetteBuilder: knitr
 Imports:
@@ -36,3 +35,4 @@ Suggests:
     rmarkdown,
     withr,
     mockery
+Config/roxygen2/version: 8.0.0
