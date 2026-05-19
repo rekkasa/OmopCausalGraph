@@ -105,19 +105,20 @@ plotOmopCausalGraph <- function(omopCausalGraph,
 
   tidyOmopCausalGraph$data$role       <- nodeRoleMap[tidyOmopCausalGraph$data$name]
   tidyOmopCausalGraph$data$fill_color <- defaultColors[tidyOmopCausalGraph$data$role]
-  tidyOmopCausalGraph$data$node_shape <- ifelse(
-    vapply(tidyOmopCausalGraph$data$name, hasBinding, logical(1)), 21L, 1L
+  tidyOmopCausalGraph$data$node_stroke <- ifelse(
+    vapply(tidyOmopCausalGraph$data$name, hasBinding, logical(1)), 1.5, 0.5
   )
 
   ggplot2::ggplot(tidyOmopCausalGraph, ggplot2::aes(x = x, y = y, xend = xend, yend = yend)) +
     ggdag::geom_dag_edges(edge_colour = edgeColor) +
     ggplot2::geom_point(
-      ggplot2::aes(fill = role, shape = I(node_shape)),
+      ggplot2::aes(fill = role, stroke = I(node_stroke)),
+      shape  = 21L,
       size   = nodeSize,
       colour = "black"
     ) +
     ggplot2::scale_fill_manual(values = defaultColors, na.value = defaultColors["plain"]) +
-    ggdag::geom_dag_label(size = labelSize) +
+    ggdag::geom_dag_label(ggplot2::aes(fill = role), colour = "black", size = labelSize) +
     ggdag::theme_dag() +
     ggplot2::labs(fill = "Causal role")
 }

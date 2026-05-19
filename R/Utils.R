@@ -34,6 +34,12 @@ detectCycle <- function(edgesData, newCause, newEffect) {
 
 #' @noRd
 rebuildDagitty <- function(nodesData, edgesData, rolesData) {
+  quoteName <- function(name) {
+    name <- gsub("--", "-", name, fixed = TRUE)
+    name <- gsub("/",  "-", name, fixed = TRUE)
+    sprintf('"%s"', name)
+  }
+
   omopCausalGraphParts <- character(0)
 
   for (i in seq_len(nrow(nodesData))) {
@@ -47,16 +53,18 @@ rebuildDagitty <- function(nodesData, edgesData, rolesData) {
     if ("adjusted"   %in% nodeRoles) roleAttrs <- c(roleAttrs, "adjusted")
     if ("selected"   %in% nodeRoles) roleAttrs <- c(roleAttrs, "selected")
 
+    qName <- quoteName(nodeName)
     if (length(roleAttrs) > 0) {
-      omopCausalGraphParts <- c(omopCausalGraphParts, sprintf("%s [%s]", nodeName, paste(roleAttrs, collapse = ", ")))
+      omopCausalGraphParts <- c(omopCausalGraphParts, sprintf("%s [%s]", qName, paste(roleAttrs, collapse = ", ")))
     } else {
-      omopCausalGraphParts <- c(omopCausalGraphParts, nodeName)
+      omopCausalGraphParts <- c(omopCausalGraphParts, qName)
     }
   }
 
   if (nrow(edgesData) > 0) {
     for (i in seq_len(nrow(edgesData))) {
-      omopCausalGraphParts <- c(omopCausalGraphParts, sprintf("%s -> %s", edgesData$cause[i], edgesData$effect[i]))
+      omopCausalGraphParts <- c(omopCausalGraphParts,
+        sprintf("%s -> %s", quoteName(edgesData$cause[i]), quoteName(edgesData$effect[i])))
     }
   }
 
