@@ -15,7 +15,7 @@
 #' active. If `alias` is supplied, it is registered as a named alternative;
 #' the active binding is unchanged unless no binding existed before.
 #'
-#' @param dag An `OmopDag` object.
+#' @param omopCausalGraph An `OmopCausalGraph` object.
 #' @param node Node name (character scalar).
 #' @param type Binding type; one of `"atlasJson"`, `"capr"`,
 #'   `"PhenotypeLibrary"`, `"demographics"`.
@@ -29,40 +29,40 @@
 #' @param bundle Logical. For `"PhenotypeLibrary"` only: if `TRUE`, immediately
 #'   fetch and embed the definition from GitHub.
 #'
-#' @return `dag`, invisibly.
+#' @return `omopCausalGraph`, invisibly.
 #'
 #' @examples
-#' dag <- emptyOmopDag("Example")
-#' dag <- addNode(dag, "Exposure", 1L, "Drug")
+#' omopCausalGraph <- emptyOmopCausalGraph("Example")
+#' omopCausalGraph <- addNode(omopCausalGraph, "Exposure", 1L, "Drug")
 #' atlas_json <- '{"ConceptSets":[],"PrimaryCriteria":{"CriteriaList":[]}}'
-#' dag <- bindPhenotype(dag, "Exposure", type = "atlasJson", definition = atlas_json)
+#' omopCausalGraph <- bindPhenotype(omopCausalGraph, "Exposure", type = "atlasJson", definition = atlas_json)
 #'
 #' @family bindings
 #' @export
-bindPhenotype <- function(dag, node, type, definition, alias = NULL, bundle = FALSE) {
-  if (!inherits(dag, "OmopDag")) {
-    stop("'dag' must be an OmopDag object.", call. = FALSE)
+bindPhenotype <- function(omopCausalGraph, node, type, definition, alias = NULL, bundle = FALSE) {
+  if (!inherits(omopCausalGraph, "OmopCausalGraph")) {
+    stop("'omopCausalGraph' must be an OmopCausalGraph object.", call. = FALSE)
   }
-  valid_types <- c("atlasJson", "capr", "PhenotypeLibrary", "demographics")
-  if (!type %in% valid_types) {
+  validTypes <- c("atlasJson", "capr", "PhenotypeLibrary", "demographics")
+  if (!type %in% validTypes) {
     stop(sprintf(
-      "'type' must be one of: %s.", paste(valid_types, collapse = ", ")
+      "'type' must be one of: %s.", paste(validTypes, collapse = ", ")
     ), call. = FALSE)
   }
-  if (!node %in% dag$constructs()$name) {
-    stop(sprintf("Node '%s' does not exist in the DAG.", node), call. = FALSE)
+  if (!node %in% omopCausalGraph$constructs()$name) {
+    stop(sprintf("Node '%s' does not exist in the OMOPCAUSALGRAPH.", node), call. = FALSE)
   }
 
-  alias_key <- if (is.null(alias)) "default" else alias
+  aliasKey <- if (is.null(alias)) "default" else alias
 
-  binding_list <- switch(type,
+  bindingData <- switch(type,
 
     atlasJson = {
       if (!is.character(definition) || length(definition) != 1L) {
         stop("For type 'atlasJson', 'definition' must be a single JSON string.", call. = FALSE)
       }
-      tryCatch(jsonlite::fromJSON(definition), error = function(e) {
-        stop(sprintf("'definition' is not valid JSON: %s", conditionMessage(e)), call. = FALSE)
+      tryCatch(jsonlite::fromJSON(definition), error = function(jsonError) {
+        stop(sprintf("'definition' is not valid JSON: %s", conditionMessage(jsonError)), call. = FALSE)
       })
       list(
         type   = "atlasJson",
@@ -78,11 +78,11 @@ bindPhenotype <- function(dag, node, type, definition, alias = NULL, bundle = FA
       if (!inherits(definition, "Cohort")) {
         stop("For type 'capr', 'definition' must be a Capr 'Cohort' object.", call. = FALSE)
       }
-      compiled_json <- jsonlite::toJSON(Capr::toCirce(definition), auto_unbox = TRUE)
+      compiledJson <- jsonlite::toJSON(Capr::toCirce(definition), auto_unbox = TRUE)
       list(
         type   = "capr",
-        json   = as.character(compiled_json),
-        sha256 = as.character(openssl::sha256(as.character(compiled_json)))
+        json   = as.character(compiledJson),
+        sha256 = as.character(openssl::sha256(as.character(compiledJson)))
       )
     },
 
@@ -94,65 +94,65 @@ bindPhenotype <- function(dag, node, type, definition, alias = NULL, bundle = FA
           call. = FALSE
         )
       }
-      ph_id <- as.integer(definition$phenotypeId)
-      if (is.na(ph_id) || ph_id <= 0L) {
+      phenotypeId <- as.integer(definition$phenotypeId)
+      if (is.na(phenotypeId) || phenotypeId <= 0L) {
         stop("'phenotypeId' must be a positive integer.", call. = FALSE)
       }
-      commit <- as.character(definition$commitHash)
-      if (nchar(commit) != 40L) {
+      commitHash <- as.character(definition$commitHash)
+      if (nchar(commitHash) != 40L) {
         stop("'commitHash' must be a 40-character SHA string.", call. = FALSE)
       }
-      bl <- list(
+      bindingList <- list(
         type        = "PhenotypeLibrary",
-        phenotypeId = ph_id,
-        commitHash  = commit,
+        phenotypeId = phenotypeId,
+        commitHash  = commitHash,
         repo        = "OHDSI/PhenotypeLibrary",
         resolved    = FALSE,
         json        = NULL,
         sha256      = NULL
       )
-      if (isTRUE(bundle)) bl <- .resolve_one_binding(bl)
-      bl
+      if (isTRUE(bundle)) bindingList <- .resolveOneBinding(bindingList)
+      bindingList
     },
 
     demographics = {
-      valid_cols <- c(
+      validColumns <- c(
         "gender_concept_id", "year_of_birth", "race_concept_id",
         "ethnicity_concept_id", "location_id", "care_site_id",
         "person_source_value", "gender_source_value",
         "race_source_value", "ethnicity_source_value"
       )
-      if (!definition %in% valid_cols) {
+      if (!definition %in% validColumns) {
         stop(sprintf(
           "'definition' for type 'demographics' must be one of: %s.",
-          paste(valid_cols, collapse = ", ")
+          paste(validColumns, collapse = ", ")
         ), call. = FALSE)
       }
       list(type = "demographics", column = definition)
     }
   )
 
-  dag$bind_phenotype_impl(node, alias_key, binding_list)
-  invisible(dag)
+  omopCausalGraph$bindPhenotypeImpl(node, aliasKey, bindingData)
+  invisible(omopCausalGraph)
 }
 
 # Internal helper used by bindPhenotype(bundle=TRUE) and resolvePhenotypes()
 #' @noRd
-.resolve_one_binding <- function(bl) {
+.resolveOneBinding <- function(bindingData) {
   url <- sprintf(
     "https://raw.githubusercontent.com/%s/%s/inst/Cohorts/%d.json",
-    bl$repo, bl$commitHash, bl$phenotypeId
+    bindingData$repo, bindingData$commitHash, bindingData$phenotypeId
   )
-  resp <- tryCatch(
+  responseLines <- tryCatch(
     readLines(url, warn = FALSE),
-    error = function(e) stop(sprintf(
+    error = function(fetchError) stop(sprintf(
       "Failed to fetch PhenotypeLibrary definition (phenotypeId=%d, commitHash=%s): %s",
-      bl$phenotypeId, bl$commitHash, conditionMessage(e)
+      bindingData$phenotypeId, bindingData$commitHash, conditionMessage(fetchError)
     ), call. = FALSE)
   )
-  json_str <- paste(resp, collapse = "\n")
-  bl$json     <- json_str
-  bl$sha256   <- as.character(openssl::sha256(json_str))
-  bl$resolved <- TRUE
-  bl
+  jsonStr             <- paste(responseLines, collapse = "\n")
+  bindingData$json     <- jsonStr
+  bindingData$sha256   <- as.character(openssl::sha256(jsonStr))
+  bindingData$resolved <- TRUE
+  bindingData
 }

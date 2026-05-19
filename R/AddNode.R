@@ -1,27 +1,27 @@
-#' Add a construct node to an OmopDag
+#' Add a construct node to an OmopCausalGraph
 #'
 #' @description
 #' Adds a single construct node anchored to an OMOP Standard Concept ID.
 #' The `domain` is validated against the bundled `omop_domains` internal vector;
 #' pass `NA` to leave it unspecified.
 #'
-#' @param dag An `OmopDag` object.
+#' @param omopCausalGraph An `OmopCausalGraph` object.
 #' @param name Node name (character scalar, must be unique within the DAG).
 #' @param conceptId OMOP Standard Concept ID (positive integer or coercible).
 #' @param domain OMOP domain string or `NA`. Must be a member of the internal
 #'   `omop_domains` vector if supplied.
 #'
-#' @return `dag`, invisibly.
+#' @return `omopCausalGraph`, invisibly.
 #'
 #' @examples
-#' dag <- emptyOmopDag("Example")
-#' dag <- addNode(dag, "Hypertension", conceptId = 320128L, domain = "Condition")
+#' omopCausalGraph <- emptyOmopCausalGraph("Example")
+#' omopCausalGraph <- addNode(omopCausalGraph, "Hypertension", conceptId = 320128L, domain = "Condition")
 #'
 #' @family construction
 #' @export
-addNode <- function(dag, name, conceptId, domain = NA_character_) {
-  if (!inherits(dag, "OmopDag")) {
-    stop("'dag' must be an OmopDag object.", call. = FALSE)
+addNode <- function(omopCausalGraph, name, conceptId, domain = NA_character_) {
+  if (!inherits(omopCausalGraph, "OmopCausalGraph")) {
+    stop("'omopCausalGraph' must be an OmopCausalGraph object.", call. = FALSE)
   }
   if (!is.character(name) || length(name) != 1L || nchar(trimws(name)) == 0L) {
     stop("'name' must be a single non-empty character string.", call. = FALSE)
@@ -38,11 +38,11 @@ addNode <- function(dag, name, conceptId, domain = NA_character_) {
       ), call. = FALSE)
     }
   }
-  existing <- dag$constructs()$name
-  if (name %in% existing) {
+  existingNodes <- omopCausalGraph$constructs()$name
+  if (name %in% existingNodes) {
     stop(sprintf("Node '%s' already exists in the DAG.", name), call. = FALSE)
   }
 
-  dag$add_node_impl(name, conceptId, domain)
-  invisible(dag)
+  omopCausalGraph$addNodeImpl(name, conceptId, domain)
+  invisible(omopCausalGraph)
 }

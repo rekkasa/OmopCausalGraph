@@ -1,6 +1,6 @@
-#' OmopDag R6 Class
+#' OmopCausalGraph R6 Class
 #'
-#' @title OmopDag: OMOP-anchored Causal DAG Container
+#' @title OmopCausalGraph: OMOP-anchored Causal DAG Container
 #'
 #' @description
 #' Central study container holding a `dagitty` graph, a construct dictionary
@@ -11,24 +11,24 @@
 #' @field name Study name, mirrors `metadata$name`.
 #'
 #' @section Methods:
-#' See exported constructor `emptyOmopDag()` and the construction, role,
+#' See exported constructor `emptyOmopCausalGraph()` and the construction, role,
 #' validation, analytics, binding, execution, and serialization families.
 #'
 #' @export
-OmopDag <- R6::R6Class(
-  "OmopDag",
+OmopCausalGraph <- R6::R6Class(
+  "OmopCausalGraph",
 
   private = list(
-    dagitty_graph_ = NULL,
-    constructs_    = NULL,
-    edges_         = NULL,
-    bindings_      = NULL,
-    metadata_      = NULL,
-    roles_         = NULL,
-    adjustment_sets_ = NULL,
+    dagittyGraph_    = NULL,
+    constructs_      = NULL,
+    edges_           = NULL,
+    bindings_        = NULL,
+    metadata_        = NULL,
+    roles_           = NULL,
+    adjustmentSets_  = NULL,
 
     # Role conflict rules: pairs that cannot coexist on the same node
-    role_conflicts_ = list(
+    roleConflicts_ = list(
       c("exposure",  "adjusted"),
       c("outcome",   "adjusted"),
       c("exposure",  "outcome")
@@ -39,7 +39,7 @@ OmopDag <- R6::R6Class(
 
     name = NULL,
 
-    #' @description Create a new OmopDag.
+    #' @description Create a new OmopCausalGraph.
     #' @param name Study name (character scalar).
     #' @param version Semver string, default `"0.1.0"`.
     #' @param description Optional description.
@@ -74,39 +74,39 @@ OmopDag <- R6::R6Class(
         evidence = character(0),
         stringsAsFactors = FALSE
       )
-      private$bindings_        <- list()
-      private$roles_           <- data.frame(
+      private$bindings_       <- list()
+      private$roles_          <- data.frame(
         node = character(0),
         role = character(0),
         stringsAsFactors = FALSE
       )
-      private$adjustment_sets_ <- list()
-      private$dagitty_graph_   <- dagitty::dagitty("dag { }")
+      private$adjustmentSets_ <- list()
+      private$dagittyGraph_   <- dagitty::dagitty("dag { }")
 
       invisible(self)
     },
 
     #' @description Print a compact summary of the DAG.
     print = function() {
-      meta   <- private$metadata_
-      n_nodes <- nrow(private$constructs_)
-      n_edges <- nrow(private$edges_)
-      exposures <- private$roles_$node[private$roles_$role == "exposure"]
-      outcomes  <- private$roles_$node[private$roles_$role == "outcome"]
-      bound_nodes  <- names(private$bindings_)
-      unresolved   <- sum(vapply(private$bindings_, function(b) {
-        active <- b$active
-        def <- b$alternatives[[active]]
-        identical(def$type, "PhenotypeLibrary") && isFALSE(def$resolved)
+      studyMeta  <- private$metadata_
+      nNodes     <- nrow(private$constructs_)
+      nEdges     <- nrow(private$edges_)
+      exposures  <- private$roles_$node[private$roles_$role == "exposure"]
+      outcomes   <- private$roles_$node[private$roles_$role == "outcome"]
+      boundNodes <- names(private$bindings_)
+      unresolved <- sum(vapply(private$bindings_, function(nodeBinding) {
+        activeAlias <- nodeBinding$active
+        activeDef   <- nodeBinding$alternatives[[activeAlias]]
+        identical(activeDef$type, "PhenotypeLibrary") && isFALSE(activeDef$resolved)
       }, logical(1)))
 
       cat(sprintf(
-        "OmopDag: %s (v%s)\n  Nodes: %d  Edges: %d\n  Exposures: %s\n  Outcomes:  %s\n  Bound nodes: %d  Unresolved PhenotypeLibrary: %d\n",
-        meta$name, meta$version,
-        n_nodes, n_edges,
+        "OmopCausalGraph: %s (v%s)\n  Nodes: %d  Edges: %d\n  Exposures: %s\n  Outcomes:  %s\n  Bound nodes: %d  Unresolved PhenotypeLibrary: %d\n",
+        studyMeta$name, studyMeta$version,
+        nNodes, nEdges,
         if (length(exposures)) paste(exposures, collapse = ", ") else "<none>",
         if (length(outcomes))  paste(outcomes,  collapse = ", ") else "<none>",
-        length(bound_nodes),
+        length(boundNodes),
         unresolved
       ))
       invisible(self)
@@ -115,7 +115,7 @@ OmopDag <- R6::R6Class(
     # ---- Accessors --------------------------------------------------------
 
     #' @description Return the `dagitty` graph object.
-    dagitty_graph = function() private$dagitty_graph_,
+    dagittyGraph = function() private$dagittyGraph_,
 
     #' @description Return the constructs data frame.
     constructs = function() private$constructs_,
@@ -133,7 +133,7 @@ OmopDag <- R6::R6Class(
     roles = function() private$roles_,
 
     #' @description Return the chosen adjustment sets list.
-    adjustment_sets = function() private$adjustment_sets_,
+    adjustmentSets = function() private$adjustmentSets_,
 
     # ---- Mutation implementations -----------------------------------------
 
@@ -141,13 +141,13 @@ OmopDag <- R6::R6Class(
     #' @param name Node name.
     #' @param conceptId OMOP concept ID.
     #' @param domain OMOP domain string or NA.
-    add_node_impl = function(name, conceptId, domain) {
+    addNodeImpl = function(name, conceptId, domain) {
       private$constructs_ <- rbind(
         private$constructs_,
         data.frame(name = name, conceptId = conceptId, domain = domain,
                    stringsAsFactors = FALSE)
       )
-      private$dagitty_graph_ <- rebuild_dagitty(
+      private$dagittyGraph_ <- rebuildDagitty(
         private$constructs_, private$edges_, private$roles_
       )
       invisible(self)
@@ -157,14 +157,14 @@ OmopDag <- R6::R6Class(
     #' @param cause Cause node name.
     #' @param effect Effect node name.
     #' @param evidence Free-text evidence note or NA.
-    add_edge_impl = function(cause, effect, evidence) {
+    addEdgeImpl = function(cause, effect, evidence) {
       private$edges_ <- rbind(
         private$edges_,
         data.frame(cause = cause, effect = effect,
                    evidence = if (is.na(evidence)) NA_character_ else evidence,
                    stringsAsFactors = FALSE)
       )
-      private$dagitty_graph_ <- rebuild_dagitty(
+      private$dagittyGraph_ <- rebuildDagitty(
         private$constructs_, private$edges_, private$roles_
       )
       invisible(self)
@@ -173,27 +173,26 @@ OmopDag <- R6::R6Class(
     #' @description Set a causal role for a node.
     #' @param node Node name.
     #' @param role Role string.
-    set_role_impl = function(node, role) {
-      existing <- private$roles_$role[private$roles_$node == node]
-      for (conflict in private$role_conflicts_) {
-        if (role %in% conflict) {
-          other <- setdiff(conflict, role)
-          if (other %in% existing) {
+    setRoleImpl = function(node, role) {
+      existingRoles <- private$roles_$role[private$roles_$node == node]
+      for (conflictPair in private$roleConflicts_) {
+        if (role %in% conflictPair) {
+          conflictingRole <- setdiff(conflictPair, role)
+          if (conflictingRole %in% existingRoles) {
             stop(sprintf(
               "Node '%s' already has role '%s'; cannot also assign '%s'.",
-              node, other, role
+              node, conflictingRole, role
             ), call. = FALSE)
           }
         }
       }
-      # Avoid duplicate role entries
       if (!any(private$roles_$node == node & private$roles_$role == role)) {
         private$roles_ <- rbind(
           private$roles_,
           data.frame(node = node, role = role, stringsAsFactors = FALSE)
         )
       }
-      private$dagitty_graph_ <- rebuild_dagitty(
+      private$dagittyGraph_ <- rebuildDagitty(
         private$constructs_, private$edges_, private$roles_
       )
       invisible(self)
@@ -202,12 +201,12 @@ OmopDag <- R6::R6Class(
     #' @description Register a phenotype binding for a node.
     #' @param node Node name.
     #' @param alias Alias key for this binding.
-    #' @param binding_list Named list describing the binding.
-    bind_phenotype_impl = function(node, alias, binding_list) {
+    #' @param bindingData Named list describing the binding.
+    bindPhenotypeImpl = function(node, alias, bindingData) {
       if (is.null(private$bindings_[[node]])) {
         private$bindings_[[node]] <- list(active = alias, alternatives = list())
       }
-      private$bindings_[[node]]$alternatives[[alias]] <- binding_list
+      private$bindings_[[node]]$alternatives[[alias]] <- bindingData
       if (is.null(private$bindings_[[node]]$active) ||
           length(private$bindings_[[node]]$alternatives) == 1L) {
         private$bindings_[[node]]$active <- alias
@@ -218,7 +217,7 @@ OmopDag <- R6::R6Class(
     #' @description Switch the active binding alias for a node.
     #' @param node Node name.
     #' @param alias Alias to activate.
-    set_active_binding_impl = function(node, alias) {
+    setActiveBindingImpl = function(node, alias) {
       private$bindings_[[node]]$active <- alias
       invisible(self)
     },
@@ -227,8 +226,8 @@ OmopDag <- R6::R6Class(
     #' @param key Character key `"<exposure>__<outcome>"`.
     #' @param index Integer index into the available sets.
     #' @param nodes Character vector of the chosen set.
-    set_adjustment_set_impl = function(key, index, nodes) {
-      private$adjustment_sets_[[key]] <- list(index = index, nodes = nodes)
+    setAdjustmentSetImpl = function(key, index, nodes) {
+      private$adjustmentSets_[[key]] <- list(index = index, nodes = nodes)
       invisible(self)
     }
   )
